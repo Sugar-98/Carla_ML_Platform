@@ -1,0 +1,6 @@
+[submodule "common_library"]
+	path = common_library
+	url = https://github.com/Sugar-98/common_library.git
+[submodule "carla_garage"]
+	path = carla_garage
+	url = https://github.com/Sugar-98/carla_garage.git

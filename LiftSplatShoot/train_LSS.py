@@ -1,34 +1,48 @@
 
 import torch
-from torch.utils.data import Dataset
 from torch import optim
-from imgaug import augmenters as ia
-import re
 import os
-import gzip
-import jsonpickle
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-
 from config_LSS import config_LSS
 from train_lib.data import CARLA_Data
-from tqdm import tqdm
-
 from LiftSplatShoot import LiftSplatShoot
 from train_lib.train_engine import Engine
 from LSS_wrapper import LSS_wrapper
 from datetime import datetime
+import argparse
+import sys
 
-epochs = 20
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Train LSS"
+    )
+
+    parser.add_argument("--data", type=str, required=True,
+                        help="Path to dataset")
+    
+    parser.add_argument("--save_path", type=str, required=True,
+                        help="Path to model save dir")
+    
+    parser.add_argument("--pretrained_model_path", type=str, default=None,
+                        help="Path for pretrained model. Model is traind from initial state when None")
+    
+    parser.add_argument("--state_dict_file", type=str, default=None,
+                        help="File name of pretrained model")
+    
+    return parser.parse_args()
         
 def main():
+    args = parse_args()
+
+    data_path = args.data
+    pretrained_model_dir = args.pretrained_model_path
+    state_dict_file = args.state_dict_file
+    model_save_dir = args.save_path + '/' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
     config = config_LSS()
-    config.initialize(root_dir=['/home/workspace/logs/dataset'])
+    config.initialize(root_dir=[data_path])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    pretrained_model_dir = None
-    state_dict_file = 'model_0020.pth'
-    model_save_dir = '/home/workspace/pretrained_models/LSS_tmp' + '/' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     model = LiftSplatShoot(config)
     if pretrained_model_dir is not None:
         state_dict = torch.load(os.path.join(pretrained_model_dir, state_dict_file), map_location=device)
@@ -70,7 +84,7 @@ def main():
     
     torch.backends.cudnn.benchmark = True
     
-    for epoch in range(trainer.cur_epoch, epochs):
+    for epoch in range(trainer.cur_epoch, config.epochs):
         print(f'-----------Epoch {epoch}----------')
         trainer.train()
         trainer.validate()
@@ -79,7 +93,22 @@ def main():
 
     os.makedirs(model_save_dir, exist_ok=True)
     trainer.save(model_save_dir)
-    plt.pause()
+    
+    print("Press any key to continue...")
+    if sys.platform.startswith("win"):
+        import msvcrt
+        msvcrt.getch()
+    else:
+        import termios
+        import tty
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
 
 if __name__ == '__main__':
     main()

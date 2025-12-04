@@ -1,5 +1,5 @@
 #!/bin/bash
-IMAGE_NAME="CARLA_ML_PLATFORM"
+IMAGE_NAME="carla_ml_platform"
 TAG="latest"
 Dockerfile="setup.Dockerfile"
 

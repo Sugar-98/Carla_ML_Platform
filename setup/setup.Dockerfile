@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     python3-distutils \
     fontconfig \
     fonts-dejavu-core \
+    x11-apps \
+    python3-tk \
+    tk \
     && rm -rf /var/lib/apt/lists/* 
 
 

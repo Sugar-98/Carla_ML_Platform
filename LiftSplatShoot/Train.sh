@@ -6,7 +6,7 @@ source ../env.sh #Define global path settings
 data_path="$PROJECT_ROOT/logs/dataset"
 pretrained_model_dir="" #Path for pretrained model. Model is traind from initial state when "None"
 state_dict_file='model_0020.pth'  #Pretrained model file
-model_save_dir="$$PROJECT_ROOT/pretrained_models/LSS"
+model_save_dir="$PROJECT_ROOT/pretrained_models/LSS"
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/train_LSS.py" #Define train script
 

@@ -14,13 +14,13 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/train_LSS.py" #Define
   cd "$WORK_DIR" || exit
 
   if [ -n "$pretrained_model_dir" ]; then
-    python "$SCRIPT_PATH" \
+    python3 "$SCRIPT_PATH" \
       --data "$data_path" \
       --save_path "$model_save_dir" \
       --state_dict_file "$state_dict_file" \
       --pretrained_model_path "$pretrained_model_dir"
   else
-    python "$SCRIPT_PATH" \
+    python3 "$SCRIPT_PATH" \
       --data "$data_path" \
       --save_path "$model_save_dir"
   fi

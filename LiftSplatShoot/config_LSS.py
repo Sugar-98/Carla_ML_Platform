@@ -26,7 +26,7 @@ class config_LSS(GlobalConfig):
     #Training parameters------------------------------------------
     self.use_post_augment = True #Post augmentation for RGB
     self.use_bev_post_augment = True #Post augmentation for BEV
-    self.epochs = 2
+    self.epochs = 3
     
     self.ignore_class = [2, 5, 6, 7, 8, 10]
     hist = np.array([1.0510e+08, 1.5803e+07, 9.9302e+06, 8.3205e+06, 2.4915e+06,

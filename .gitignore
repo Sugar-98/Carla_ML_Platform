@@ -1,2 +1,2 @@
-__pycache__/
-Analysis/test.py
+logs/
+pretrained_models/

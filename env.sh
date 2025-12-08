@@ -1,0 +1,19 @@
+#!/bin/bash
+
+export PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+export CARLA_GARAGE_ROOT="$PROJECT_ROOT/carla_garage"
+export WORK_DIR="$CARLA_GARAGE_ROOT"
+export COMMON_LIBRARY_ROOT="$PROJECT_ROOT/common_library"
+export SCENARIO_RUNNER_ROOT="$CARLA_GARAGE_ROOT/scenario_runner_autopilot"
+export LEADERBOARD_ROOT="$CARLA_GARAGE_ROOT/leaderboard_autopilot"
+CARLA_PYTHONAPI_ROOT="$CARLA_GARAGE_ROOT/carla/PythonAPI/carla"
+TEAM_CODE_ROOT="$CARLA_GARAGE_ROOT/team_code"
+
+# === PYTHONPATH ===
+export PYTHONPATH="$CARLA_PYTHONAPI_ROOT:\
+$SCENARIO_RUNNER_ROOT:\
+$LEADERBOARD_ROOT:\
+$TEAM_CODE_ROOT:\
+$COMMON_LIBRARY_ROOT:\
+$PYTHONPATH"

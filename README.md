@@ -10,13 +10,13 @@ Setup is verified only at WSL environment, but you can try to setup at Virtual M
 
 # Collect multi camera dataset
 ### 1. Setup the parameters which needed for data collection. 
-- Set the parameter for SCENARIO_ROOT, SAVE_PATH in [collect_dataset.sh](common_library/agent_lib/collect_dataset.sh) as per your objective. 
+- Set the parameter for SCENARIO_ROOT, SAVE_PATH in "common_library/agent_lib/collect_dataset.sh" as per your objective. 
 - Set the parameter for HOST, PORT as per your CARLA environment. 
 - "NUM_SCENES" should be set when you want to limit the number of xml file(exist at "carla_garage/data") executed for each scenarios. 
 
 ### 2. Execute data collection
 - Start up CarlaUE4.exe. 
-- Run [collect_dataset.sh](common_library/agent_lib/collect_dataset.sh). 
+- Run "common_library/agent_lib/collect_dataset.sh". 
 
 ### 3. Dataset which you can generate
 Using the repository, you can get, 
@@ -28,8 +28,7 @@ Using the repository, you can get,
 - Bev image. 
 - Measurements data such as speed, yaw, control command, and etc...
 
-You can configure camera parameters and what data will be saved at [config.py](common_library/common/config.py). 
-
+You can configure camera parameters and what data will be saved at "common_library/common/config.py". 
 Camera settings : GlobalConfig.cameras\
 Generated data setting : 
 ```python

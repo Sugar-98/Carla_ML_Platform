@@ -4,7 +4,7 @@ from train_lib.train_engine import Engine, Model_wrapper
 from train_lib.data import CARLA_Data
 from torch import nn
 import matplotlib.pyplot as plt
-from common.utils import get_bev_semantic_rgb
+from common.utils import get_bev_semantic_rgb, compute_tp_fp_fn_multiclass
 import numpy as np
 import torch.nn.functional as F
 import cv2
@@ -30,6 +30,9 @@ class LSS_wrapper(Model_wrapper):
     self.last_post_trans = None
     self.last_pred_bev_semantics = None
     self.last_label_bev_semantics = None
+
+    self.pred_bev_semantics_latest = None
+    self.label_bev_semantics_latest = None
 
 
   def load_data_compute_loss(self, data):
@@ -57,14 +60,97 @@ class LSS_wrapper(Model_wrapper):
     self.last_pred_bev_semantics = pred_bev_semantics[-1]
     self.last_label_bev_semantics = label_bev_semantics[-1]
 
+    self.pred_bev_semantics_latest = pred_bev_semantics
+    self.label_bev_semantics_latest = label_bev_semantics
+
     return pred_bev_semantics, label_bev_semantics, loss, loss_individual
+
+  def init_metrics(self):
+    self.tp = torch.zeros(self.config.outC, dtype=torch.long)
+    self.fp = torch.zeros(self.config.outC, dtype=torch.long)
+    self.fn = torch.zeros(self.config.outC, dtype=torch.long)
+
+  def cal_metrics_batch(self):
+    tmp_tp, tmp_fp, tmp_fn = compute_tp_fp_fn_multiclass(
+      self.pred_bev_semantics_latest,
+      self.label_bev_semantics_latest, 
+      self.config.outC, 
+      self.config.ignore_class
+    )
+
+    self.tp += tmp_tp
+    self.fp += tmp_fp
+    self.fn += tmp_fn
+
+  def cal_metrics_epoch(self):
+    """
+    Compute segmentation metrics and return a dictionary
+    where each key maps to a list of per-class metric values.
+    """
+    precision = torch.zeros(self.config.outC, dtype=torch.float32)
+    recall    = torch.zeros(self.config.outC, dtype=torch.float32)
+    f1        = torch.zeros(self.config.outC, dtype=torch.float32)
+    iou       = torch.zeros(self.config.outC, dtype=torch.float32)
+
+    for c in range(self.config.outC):
+
+      if c in self.config.ignore_class:
+        precision[c] = float('nan')
+        recall[c]    = float('nan')
+        f1[c]      = float('nan')
+        iou[c]       = float('nan')
+        continue
+
+      # Precision = TP / (TP + FP)
+      den = self.tp[c] + self.fp[c]
+      if den > 0:
+        precision[c] = self.tp[c].float() / den.float()
+      else:
+        precision[c] = float('nan')
+
+      # Recall = TP / (TP + FN)
+      den = self.tp[c] + self.fn[c]
+      if den > 0:
+        recall[c] = self.tp[c].float() / den.float()
+      else:
+        recall[c] = float('nan')
+
+      # F1 = 2PR / (P + R)
+      if precision[c] + recall[c] > 0:
+        f1[c] = 2 * precision[c] * recall[c] / (precision[c] + recall[c])
+      else:
+        f1[c] = float('nan')
+
+      # IoU = TP / (TP + FP + FN)
+      den = self.tp[c] + self.fp[c] + self.fn[c]
+      if den > 0:
+        iou[c] = self.tp[c].float() / den.float()
+      else:
+        iou[c] = float('nan')
+
+    m_precision = torch.nanmean(precision).item()
+    m_recall    = torch.nanmean(recall).item()
+    m_f1        = torch.nanmean(f1).item()
+    mIoU        = torch.nanmean(iou).item()
+
+    return {
+      "precision": precision.tolist(),
+      "recall": recall.tolist(),
+      "f1": f1.tolist(),
+      "iou": iou.tolist(),
+
+      "m_precision": m_precision,
+      "m_recall": m_recall,
+      "m_f1": m_f1,
+      "mIoU": mIoU,
+    }
   
   def plot_model_out(self):
     import numpy as np
     import torch
     import matplotlib.pyplot as plt
 
-    # ---- 予測/ラベルBEVをRGB化 ----
+    # ---- Convert pred/label BEV to RGB ----
     #pred_bev_semantics = torch.argmax(self.last_pred_bev_semantics, dim=0).detach().cpu().numpy()
     pred_bev_semantics = F.softmax(self.last_pred_bev_semantics, dim=0).detach().cpu().numpy()
     pred_bev_semantics_rgb = get_bev_semantic_rgb(pred_bev_semantics, self.config.bev_classes_list)
@@ -74,7 +160,7 @@ class LSS_wrapper(Model_wrapper):
     label_bev_semantics = label_bev_semantics.permute(2, 0, 1).float().detach().cpu().numpy()
     label_bev_semantics_rgb = get_bev_semantic_rgb(label_bev_semantics, self.config.bev_classes_list)
 
-    # ---- 自車矩形を描画 ----
+    # ---- Plot ego ----
     h, w, _ = pred_bev_semantics_rgb.shape
     center_x, center_y = w // 2, h // 2
     # lincoln.mkz_2017 size: 4.9m × 2.1m
@@ -93,7 +179,7 @@ class LSS_wrapper(Model_wrapper):
     pred_bev_semantics_rgb = cv2.rectangle(pred_bev_semantics_rgb.copy(), top_left, bottom_right, color_bgr, thickness=-1)
     label_bev_semantics_rgb = cv2.rectangle(label_bev_semantics_rgb.copy(), top_left, bottom_right, color_bgr, thickness=-1)
 
-    # ---- 6カメラを横長に合成 ----
+    # ---- Align rgbs ----
     img = self.last_imgs.detach().cpu().numpy()    # [N,3,H,W] (BGR/標準化想定)
     mean = np.array(self.config.rgb_mean)
     std  = np.array(self.config.rgb_std)
@@ -104,7 +190,6 @@ class LSS_wrapper(Model_wrapper):
     n, H, W, C = img_rgb.shape
     canvas = np.full((2*H, 3*W, C), 0, dtype=np.uint8)
 
-    # 固定配置（あなたの元コードと同じレイアウト）
     placements = {
         0: (0*H, 1*W, 1*H, 2*W),  # FRONT
         1: (1*H, 1*W, 2*H, 2*W),  # BACK
@@ -117,23 +202,20 @@ class LSS_wrapper(Model_wrapper):
         y0, x0, y1, x1 = placements[idx]
         canvas[y0:y1, x0:x1] = img_rgb[idx]
 
-    # ---- 図の作成（1ウィンドウに集約） ----
     if not hasattr(self, "_fig") or self._fig is None:
         self._fig = plt.figure(num="Model Output", constrained_layout=True)
         gs = self._fig.add_gridspec(
             nrows=2, ncols=2,
             width_ratios=[1, 1],
-            height_ratios=[1, 0.75],  # 下段はやや低めに
+            height_ratios=[1, 0.75], 
         )
         self._ax_pred  = self._fig.add_subplot(gs[0, 0])
         self._ax_label = self._fig.add_subplot(gs[0, 1])
         self._ax_rgb   = self._fig.add_subplot(gs[1, :])
 
-        # 上段は“正方形”を維持
         for ax in (self._ax_pred, self._ax_label):
             ax.set_aspect('equal', adjustable='box')
 
-    # ---- 描画更新 ----
     self._ax_pred.clear()
     self._ax_pred.imshow(pred_bev_semantics_rgb)
     self._ax_pred.set_title("Pred")

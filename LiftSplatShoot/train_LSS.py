@@ -89,6 +89,7 @@ def main():
         trainer.train()
         trainer.validate()
         trainer.plot_loss()
+        trainer.plot_metrics()
         trainer.cur_epoch += 1
 
     os.makedirs(model_save_dir, exist_ok=True)

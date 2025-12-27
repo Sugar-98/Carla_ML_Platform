@@ -232,4 +232,4 @@ class LSS_wrapper(Model_wrapper):
     self._ax_rgb.axis("off")
 
     self._fig.canvas.draw_idle()
-    plt.pause(0.02)
+    plt.pause(0.1)

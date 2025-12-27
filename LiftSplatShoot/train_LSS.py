@@ -38,6 +38,7 @@ def main():
     pretrained_model_dir = args.pretrained_model_path
     state_dict_file = args.state_dict_file
     model_save_dir = args.save_path + '/' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    os.makedirs(model_save_dir, exist_ok=True)
 
     config = config_LSS()
     config.initialize(root_dir=[data_path])
@@ -90,9 +91,9 @@ def main():
         trainer.validate()
         trainer.plot_loss()
         trainer.plot_metrics()
+        trainer.save(model_save_dir, epoch)
         trainer.cur_epoch += 1
 
-    os.makedirs(model_save_dir, exist_ok=True)
     trainer.save(model_save_dir)
     
     print("Press any key to continue...")

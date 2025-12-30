@@ -28,9 +28,23 @@ else
   EXTRA_WSL_OPTS=""
 fi
 
+# Detect GPU availability for Docker (NVIDIA Container Toolkit)
+GPU_OPTS=()
+if command -v nvidia-smi >/dev/null 2>&1; then
+  # nvidia-smi exists on host → likely NVIDIA GPU/driver present
+  if docker info 2>/dev/null | grep -qi "Runtimes:.*nvidia"; then
+    echo "NVIDIA runtime detected — enabling --gpus all"
+    GPU_OPTS+=(--gpus all)
+  else
+    echo "nvidia-smi exists but Docker NVIDIA runtime not detected — running CPU mode"
+  fi
+else
+  echo "No nvidia-smi — running CPU mode"
+fi
 
 # Run the container with all mounts and environment variables
-docker run --gpus all \
+docker run \
+  "${GPU_OPTS[@]}" \
   --shm-size=8g \
   -p 8891:8888 \
   -v "$HOST_DIR":"$CONTAINER_DIR" \

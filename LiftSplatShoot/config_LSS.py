@@ -1,10 +1,10 @@
-from common.config import GlobalConfig
+from common.config.Train_conf import Train_conf
 from common.utils import cal_mfb_weights
 import numpy as np
 from pathlib import Path
 from datetime import datetime
 
-class config_LSS(GlobalConfig):
+class config_LSS(Train_conf):
   def __init__(self):
     super().__init__()
 
@@ -37,3 +37,7 @@ class config_LSS(GlobalConfig):
     #Disable other models
     self.use_PilotNet = False
     self.use_CIL = False
+
+    def initialize(self, root_dir='', setting='all', **kwargs):
+      super().initialize(root_dir='', setting='all', **kwargs)
+      self.DataLoader_config.ignore_class = self.ignore_class

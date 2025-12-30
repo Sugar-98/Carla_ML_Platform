@@ -130,7 +130,7 @@ class LiftSplatShoot(nn.Module):
     def __init__(self, config):
         super(LiftSplatShoot, self).__init__()
         self.grid_conf = config.grid_conf
-        self.data_aug_conf = config.data_aug_conf
+        self.data_aug_conf = config.DataLoader_config.data_aug_conf
 
         dx, bx, nx = gen_dx_bx(self.grid_conf['xbound'],
                                               self.grid_conf['ybound'],

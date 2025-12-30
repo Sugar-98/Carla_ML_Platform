@@ -11,6 +11,7 @@ from LSS_wrapper import LSS_wrapper
 from datetime import datetime
 import argparse
 import sys
+from config import GlobalConfig
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -41,6 +42,7 @@ def main():
     os.makedirs(model_save_dir, exist_ok=True)
 
     config = config_LSS()
+    carla_garage_config = GlobalConfig()
     config.initialize(root_dir=[data_path])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -51,17 +53,23 @@ def main():
 
     
     train_set = CARLA_Data(root=config.data_roots,
-                        config=config,
-                        estimate_class_distributions=config.estimate_class_distributions,
-                        estimate_sem_distribution=config.estimate_semantic_distribution,
-                        validation=False)
+                        DataLoader_config=config.DataLoader_config,
+                        carla_garage_config = carla_garage_config,
+                        DataAgent_config = config.DataAgent_config, 
+                        validation=False,
+                        val_towns = config.val_towns)
 
     model_wrapper = LSS_wrapper(model, config, device)
 
     start_epoch = 0  # Epoch to continue training from
     optimizer = optim.Adam(model_wrapper.parameters(), lr=1e-4, weight_decay=1e-7)
 
-    val_set = CARLA_Data(root=config.data_roots, config=config, validation=True)
+    val_set = CARLA_Data(root=config.data_roots,
+                        DataLoader_config=config.DataLoader_config,
+                        carla_garage_config = carla_garage_config,
+                        DataAgent_config = config.DataAgent_config, 
+                        validation=True,
+                        val_towns = config.val_towns)
 
     dataloader_train = DataLoader(train_set,
                                 batch_size=6,

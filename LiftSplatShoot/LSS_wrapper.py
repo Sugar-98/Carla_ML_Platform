@@ -153,12 +153,12 @@ class LSS_wrapper(Model_wrapper):
     # ---- Convert pred/label BEV to RGB ----
     #pred_bev_semantics = torch.argmax(self.last_pred_bev_semantics, dim=0).detach().cpu().numpy()
     pred_bev_semantics = F.softmax(self.last_pred_bev_semantics, dim=0).detach().cpu().numpy()
-    pred_bev_semantics_rgb = get_bev_semantic_rgb(pred_bev_semantics, self.config.bev_classes_list)
+    pred_bev_semantics_rgb = get_bev_semantic_rgb(pred_bev_semantics, self.config.carla_garage_config.bev_classes_list)
 
     #label_bev_semantics = self.last_label_bev_semantics.detach().cpu().numpy()
     label_bev_semantics = F.one_hot(self.last_label_bev_semantics, num_classes=self.config.outC)
     label_bev_semantics = label_bev_semantics.permute(2, 0, 1).float().detach().cpu().numpy()
-    label_bev_semantics_rgb = get_bev_semantic_rgb(label_bev_semantics, self.config.bev_classes_list)
+    label_bev_semantics_rgb = get_bev_semantic_rgb(label_bev_semantics, self.config.carla_garage_config.bev_classes_list)
 
     # ---- Plot ego ----
     h, w, _ = pred_bev_semantics_rgb.shape
@@ -180,12 +180,12 @@ class LSS_wrapper(Model_wrapper):
     label_bev_semantics_rgb = cv2.rectangle(label_bev_semantics_rgb.copy(), top_left, bottom_right, color_bgr, thickness=-1)
 
     # ---- Align rgbs ----
-    img = self.last_imgs.detach().cpu().numpy()    # [N,3,H,W] (BGR/標準化想定)
-    mean = np.array(self.config.rgb_mean)
-    std  = np.array(self.config.rgb_std)
-    img = img.transpose(0, 2, 3, 1)                # [N,H,W,C]
+    img = self.last_imgs.detach().cpu().numpy()
+    mean = np.array(self.config.DataLoader_config.rgb_mean)
+    std  = np.array(self.config.DataLoader_config.rgb_std)
+    img = img.transpose(0, 2, 3, 1)
     img_rgb = (img * std + mean) * 255
-    img_rgb = img_rgb[..., ::-1].clip(0, 255).astype(np.uint8)  # BGR→RGB
+    img_rgb = img_rgb[..., ::-1].clip(0, 255).astype(np.uint8)
 
     n, H, W, C = img_rgb.shape
     canvas = np.full((2*H, 3*W, C), 0, dtype=np.uint8)

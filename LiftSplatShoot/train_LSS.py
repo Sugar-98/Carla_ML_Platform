@@ -12,6 +12,8 @@ from datetime import datetime
 import argparse
 import sys
 from config import GlobalConfig
+from common.config.DataLoader_conf import DataLoader_conf
+from common.config.DataAgent_conf import DataAgent_conf
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -41,9 +43,16 @@ def main():
     model_save_dir = args.save_path + '/' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     os.makedirs(model_save_dir, exist_ok=True)
 
-    config = config_LSS()
     carla_garage_config = GlobalConfig()
-    config.initialize(root_dir=[data_path])
+    DataAgent_config = DataAgent_conf()
+    DataLoader_config = DataLoader_conf(DataAgent_config)
+
+    config = config_LSS()
+    config.initialize(root_dir=[data_path],
+                      carla_garage_config = carla_garage_config,
+                      DataAgent_config = DataAgent_config, 
+                      DataLoader_config = DataLoader_config
+                      )
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = LiftSplatShoot(config)
@@ -72,37 +81,41 @@ def main():
                         val_towns = config.val_towns)
 
     dataloader_train = DataLoader(train_set,
-                                batch_size=6,
+                                batch_size=1,
                                 shuffle = True,
-                                num_workers = 4,
+                                num_workers = 0,
                                 pin_memory=True)
     
     dataloader_val = DataLoader(val_set,
-                                 batch_size=6,
+                                 batch_size=1,
                                  shuffle = False,
-                                num_workers = 4,
+                                num_workers = 0,
                                 pin_memory=True)
     
     trainer = Engine(model_wrapper=model_wrapper,
                     optimizer=optimizer,
                     dataloader_train=dataloader_train,
                     dataloader_val=dataloader_val,
-                    config=config,
+                    Train_config=config,
                     device=device,
                     cur_epoch=start_epoch)
     
     torch.backends.cudnn.benchmark = True
     
+    config_set = {
+        "LSS_conf":config, 
+        "CARLA_conf":carla_garage_config
+    }
     for epoch in range(trainer.cur_epoch, config.epochs):
         print(f'-----------Epoch {epoch}----------')
         trainer.train()
         trainer.validate()
         trainer.plot_loss()
         trainer.plot_metrics()
-        trainer.save(model_save_dir, epoch)
+        trainer.save(model_save_dir, config_set, epoch)
         trainer.cur_epoch += 1
 
-    trainer.save(model_save_dir)
+    trainer.save(model_save_dir, config_set)
     
     print("Press any key to continue...")
     if sys.platform.startswith("win"):

@@ -24,8 +24,6 @@ class config_LSS(Train_conf):
     self.outC = 11
     
     #Training parameters------------------------------------------
-    self.use_post_augment = True #Post augmentation for RGB
-    self.use_bev_post_augment = True #Post augmentation for BEV
     self.epochs = 10
     
     self.ignore_class = [2, 5, 6, 7, 8, 10]
@@ -34,10 +32,11 @@ class config_LSS(Train_conf):
 
     self.bev_semantic_weights = cal_mfb_weights(hist, ignore_class=self.ignore_class)
 
-    #Disable other models
-    self.use_PilotNet = False
-    self.use_CIL = False
-
-    def initialize(self, root_dir='', setting='all', **kwargs):
-      super().initialize(root_dir='', setting='all', **kwargs)
-      self.DataLoader_config.ignore_class = self.ignore_class
+  def initialize(self, root_dir='', setting='all', **kwargs):
+    super().initialize(root_dir=root_dir, setting=setting, **kwargs)
+    self.DataLoader_config.ignore_class = self.ignore_class
+    self.DataLoader_config.use_post_augment = True #Post augmentation for RGB
+    self.DataLoader_config.use_bev_post_augment = True #Post augmentation for BEV
+    self.DataLoader_config.num_max_data_train = 1
+    self.DataLoader_config.num_max_data_val = 1
+    self.val_towns = [10]

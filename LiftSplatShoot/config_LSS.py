@@ -28,6 +28,7 @@ class config_LSS(Train_conf):
     self.batch_size = 6  # Batch size used during training
     self.lr = 1e-4  # Learning rate used for training
     self.weight_decay = 1e-7  # Weight decay coefficient used during training
+    self.early_stopping_th = 4
     
     self.ignore_class = []
     hist = np.array([1.0510e+08, 1.5803e+07, 9.9302e+06, 8.3205e+06, 2.4915e+06,

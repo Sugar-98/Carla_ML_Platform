@@ -233,3 +233,13 @@ class LSS_wrapper(Model_wrapper):
 
     self._fig.canvas.draw_idle()
     plt.pause(0.5)
+
+  def compare_metrics(self, metrics_left, metrics_right):
+    """
+    Return True if metrics_right is better than metrics_left.
+    Input metrics should be same structure as return value of self.cal_metrics_epoch(). 
+    """
+    if metrics_left["mIoU"] <= metrics_right["mIoU"]:
+      return True
+    else:
+      return False

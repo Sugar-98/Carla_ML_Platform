@@ -119,6 +119,9 @@ def main():
     trainer.plot_loss()
     trainer.plot_metrics()
     trainer.save(model_save_dir, config_set, epoch)
+    if trainer.early_stopping(epoch):
+      print("Trainning is stoped early")
+      break
     trainer.cur_epoch += 1
 
   trainer.save(model_save_dir, config_set)

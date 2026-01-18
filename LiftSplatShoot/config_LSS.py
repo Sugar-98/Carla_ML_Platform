@@ -24,9 +24,12 @@ class config_LSS(Train_conf):
     self.outC = 11
     
     #Training parameters------------------------------------------
-    self.epochs = 10
+    self.epochs = 20  # Number of epochs to train
+    self.batch_size = 6  # Batch size used during training
+    self.lr = 1e-4  # Learning rate used for training
+    self.weight_decay = 1e-7  # Weight decay coefficient used during training
     
-    self.ignore_class = [2, 5, 6, 7, 8, 10]
+    self.ignore_class = []
     hist = np.array([1.0510e+08, 1.5803e+07, 9.9302e+06, 8.3205e+06, 2.4915e+06,
                     6.2880e+03, 2.1756e+04, 6.2400e+02, 3.5760e+04, 2.8545e+06, 5.4320e+03])
 
@@ -37,6 +40,6 @@ class config_LSS(Train_conf):
     self.DataLoader_config.ignore_class = self.ignore_class
     self.DataLoader_config.use_post_augment = True #Post augmentation for RGB
     self.DataLoader_config.use_bev_post_augment = True #Post augmentation for BEV
-    self.DataLoader_config.num_max_data_train = 1
-    self.DataLoader_config.num_max_data_val = 1
-    self.val_towns = [10]
+    self.DataLoader_config.num_max_data_train = 80000
+    self.DataLoader_config.num_max_data_val = 5000
+    self.val_towns = [13]

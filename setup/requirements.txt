@@ -50,3 +50,4 @@ xmlschema==1.0.18
 pillow==10.2.0
 efficientnet-pytorch==0.7.1
 pydot==3.0.4
+pandas

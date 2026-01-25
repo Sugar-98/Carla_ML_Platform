@@ -47,7 +47,8 @@
             "args": [
                 "--data=${workspaceFolder}/logs/dataset_plot",
                 "--pretrained_model_path=${workspaceFolder}/pretrained_models/LSS/2026-01-06_01-39-05_FullTrain", 
-                "--state_dict_file=model_latest.pth"
+                "--state_dict_file=model_latest.pth",
+                "--save_path=${workspaceFolder}/pretrained_models/LSS/2026-01-06_01-39-05_FullTrain/visualize.mp4"
             ]
         },
         {

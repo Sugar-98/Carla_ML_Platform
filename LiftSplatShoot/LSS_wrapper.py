@@ -203,7 +203,12 @@ class LSS_wrapper(Model_wrapper):
         canvas[y0:y1, x0:x1] = img_rgb[idx]
 
     if not hasattr(self, "_fig") or self._fig is None:
-        self._fig = plt.figure(num="Model Output", constrained_layout=True)
+        self._fig = plt.figure(
+            num="Model Output",
+            figsize=(12, 9.6),
+            dpi=100,
+            constrained_layout=True
+        )
         gs = self._fig.add_gridspec(
             nrows=2, ncols=2,
             width_ratios=[1, 1],
@@ -231,8 +236,13 @@ class LSS_wrapper(Model_wrapper):
     self._ax_rgb.set_title("Surround Cameras")
     self._ax_rgb.axis("off")
 
-    self._fig.canvas.draw_idle()
-    plt.pause(0.5)
+    # ---- Render and return as image (same layout as plot) ----
+    self._fig.canvas.draw()  # ensure renderer is updated
+    w_fig, h_fig = self._fig.canvas.get_width_height()
+    out_img_rgb = np.frombuffer(self._fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h_fig, w_fig, 3)
+
+    plt.pause(0.01)
+    return out_img_rgb
 
   def compare_metrics(self, metrics_left, metrics_right):
     """

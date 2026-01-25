@@ -14,6 +14,7 @@ import sys
 from config import GlobalConfig
 from common.config.DataLoader_conf import DataLoader_conf
 from common.config.DataAgent_conf import DataAgent_conf
+from common.utils import MP4Writer
 import time
 import json
 
@@ -30,6 +31,9 @@ def parse_args():
   
   parser.add_argument("--state_dict_file", type=str,
             help="File name of pretrained model")
+
+  parser.add_argument("--save_path", type=str, default=None,
+            help="Path to save video")
   
   return parser.parse_args()
 
@@ -41,12 +45,14 @@ def main():
   data_path = args.data
   pretrained_model_dir = args.pretrained_model_path
   state_dict_file = args.state_dict_file
+  video_save_dir = args.save_path
 
   carla_garage_config = GlobalConfig()
   DataAgent_config = DataAgent_conf()
   DataLoader_config = DataLoader_conf(DataAgent_config)
 
   config = config_LSS()
+  config.ignore_class = []
   config.initialize(root_dir=[data_path],
             carla_garage_config = carla_garage_config,
             DataAgent_config = DataAgent_config, 
@@ -74,10 +80,21 @@ def main():
                 pin_memory=True)
   
   torch.backends.cudnn.benchmark = True
+
+  if video_save_dir is not None:
+    video = MP4Writer(
+        save_path=video_save_dir,
+        fps=10
+    )
   
   for data in dataloader_val:
     model_wrapper.load_data_compute_loss(data)
-    model_wrapper.plot_model_out()
+    img = model_wrapper.plot_model_out()
+    if video_save_dir is not None:
+      video.write(img)
+
+  if video_save_dir is not None:
+    video.close()
 
   print("Press any key to continue...")
   if sys.platform.startswith("win"):

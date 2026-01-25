@@ -5,27 +5,27 @@ Requirements (from user):
 - Plot Train and Val together in the same figure for each metric.
 - For class-wise metrics, plot all classes together in a single figure (per metric type).
 - Adjust legend to be clean and readable.
+- Additionally: plot train-val diff in separate figures.
 
 Usage:
   python plot_log_csv.py --csv log.csv --outdir plots --show
 
 Outputs:
   plots/loss.png
+  plots/loss_diff.png
   plots/time_train_val.png
   plots/mIoU.png
-  plots/m_precision.png
+  plots/mIoU_diff.png
   ...
   plots/precision_all_classes.png
-  plots/recall_all_classes.png
-  plots/f1_all_classes.png
-  plots/iou_all_classes.png
+  plots/precision_diff_all_classes.png
 """
 
 import argparse
 import os
 import re
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -40,6 +40,9 @@ def safe_makedirs(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
+# ============================================================
+# Train/Val scalar plot
+# ============================================================
 def plot_train_val_scalar(
     df: pd.DataFrame,
     epoch_col: str,
@@ -69,8 +72,6 @@ def plot_train_val_scalar(
     ax.set_title(title or metric_base)
 
     ax.grid(True, alpha=0.3)
-
-    # Clean legend: inside, best spot
     ax.legend(loc="best", frameon=True)
 
     fig.tight_layout()
@@ -78,6 +79,45 @@ def plot_train_val_scalar(
     plt.close(fig)
 
 
+# ============================================================
+# Train/Val diff plot (scalar)
+# ============================================================
+def plot_diff_scalar(
+    df: pd.DataFrame,
+    epoch_col: str,
+    metric_base: str,
+    outpath: str,
+):
+    x = df[epoch_col].to_numpy()
+    col_train = f"{metric_base}_train"
+    col_val = f"{metric_base}_val"
+
+    if col_train not in df.columns or col_val not in df.columns:
+        return
+
+    y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
+    y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
+    diff = y_train - y_val
+
+    fig = plt.figure(figsize=(9.5, 5.5))
+    ax = fig.add_subplot(111)
+
+    ax.plot(x, diff, label="Train - Val", color="purple")
+
+    ax.set_xlabel("epoch")
+    ax.set_ylabel(f"{metric_base} diff")
+    ax.set_title(f"{metric_base}: Train - Val")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best", frameon=True)
+
+    fig.tight_layout()
+    fig.savefig(outpath, dpi=180)
+    plt.close(fig)
+
+
+# ============================================================
+# Special two-series plot (time)
+# ============================================================
 def plot_train_val_two_series(
     df: pd.DataFrame,
     epoch_col: str,
@@ -109,6 +149,9 @@ def plot_train_val_two_series(
     plt.close(fig)
 
 
+# ============================================================
+# Class-wise train/val plot
+# ============================================================
 def plot_all_classes_train_val(
     df: pd.DataFrame,
     epoch_col: str,
@@ -116,14 +159,8 @@ def plot_all_classes_train_val(
     class_ids: List[int],
     outpath: str,
 ) -> None:
-    """
-    One figure per metric_name (precision/recall/f1/iou), all classes together.
-    Train+Val must be on same figure.
-    Use same color per class, different linestyle for train/val.
-    """
     x = df[epoch_col].to_numpy()
 
-    # Use a colormap to keep class colors stable (avoid relying on default cycle).
     cmap = plt.get_cmap("tab20")
     colors = [cmap(i % 20) for i in range(len(class_ids))]
 
@@ -139,7 +176,6 @@ def plot_all_classes_train_val(
         y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
         y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
 
-        # Same color for class, linestyle differs by split
         ax.plot(x, y_train, linestyle="-", color=colors[idx], label=f"C{c} Train")
         ax.plot(x, y_val, linestyle="--", color=colors[idx], label=f"C{c} Val")
 
@@ -148,7 +184,6 @@ def plot_all_classes_train_val(
     ax.set_title(f"{metric_name}: all classes (Train solid / Val dashed)")
     ax.grid(True, alpha=0.3)
 
-    # Legend outside to avoid clutter; multi-column
     handles, labels = ax.get_legend_handles_labels()
     if handles:
         ax.legend(
@@ -159,9 +194,6 @@ def plot_all_classes_train_val(
             frameon=True,
             fontsize=8,
             ncol=2,
-            columnspacing=1.0,
-            handlelength=2.4,
-            borderaxespad=0.0,
         )
 
     fig.tight_layout()
@@ -169,6 +201,60 @@ def plot_all_classes_train_val(
     plt.close(fig)
 
 
+# ============================================================
+# Class-wise diff plot
+# ============================================================
+def plot_diff_classwise(
+    df: pd.DataFrame,
+    epoch_col: str,
+    metric_name: str,
+    class_ids: List[int],
+    outpath: str,
+):
+    x = df[epoch_col].to_numpy()
+    cmap = plt.get_cmap("tab20")
+    colors = [cmap(i % 20) for i in range(len(class_ids))]
+
+    fig = plt.figure(figsize=(12.5, 6.5))
+    ax = fig.add_subplot(111)
+
+    for idx, c in enumerate(class_ids):
+        col_train = f"{metric_name}_{c}_train"
+        col_val = f"{metric_name}_{c}_val"
+        if col_train not in df.columns or col_val not in df.columns:
+            continue
+
+        y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
+        y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
+        diff = y_train - y_val
+
+        ax.plot(x, diff, color=colors[idx], label=f"C{c} diff")
+
+    ax.set_xlabel("epoch")
+    ax.set_ylabel(f"{metric_name} diff")
+    ax.set_title(f"{metric_name}: Train - Val (diff)")
+    ax.grid(True, alpha=0.3)
+
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(
+            handles,
+            labels,
+            loc="center left",
+            bbox_to_anchor=(1.02, 0.5),
+            frameon=True,
+            fontsize=8,
+            ncol=2,
+        )
+
+    fig.tight_layout()
+    fig.savefig(outpath, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
+# ============================================================
+# Main
+# ============================================================
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", required=True, help="Path to CSV log file")
@@ -187,13 +273,11 @@ def main() -> int:
         print("[ERROR] CSV must contain 'epoch' column.", file=sys.stderr)
         return 2
 
-    # Ensure numeric epoch
     df["epoch"] = pd.to_numeric(df["epoch"], errors="coerce")
     df = df.dropna(subset=["epoch"]).reset_index(drop=True)
     epoch_col = "epoch"
 
-    # --- 1) Handle special paired metrics that aren't *_train/_val bases (if any)
-    # In your CSV, time columns are time_train(h), time_val(h) (not time_train)
+    # --- Special paired metrics (time)
     if "time_train(h)" in df.columns and "time_val(h)" in df.columns:
         plot_train_val_two_series(
             df=df,
@@ -205,8 +289,7 @@ def main() -> int:
             title="time (Train vs Val)",
         )
 
-    # --- 2) Scalar metrics with *_train and *_val
-    # Detect bases from columns ending with _train/_val
+    # --- Scalar metrics
     bases: Dict[str, set] = {}
     for col in df.columns:
         m = SPLIT_SUFFIX_RE.match(col)
@@ -215,10 +298,7 @@ def main() -> int:
         base, split = m.group(1), m.group(2)
         bases.setdefault(base, set()).add(split)
 
-    # We will plot any base that has both train and val,
-    # but we will EXCLUDE class-wise bases like precision_0, recall_3, etc (handled later).
     def is_classwise_base(base: str) -> bool:
-        # base like "precision_0" / "iou_10" etc.
         return bool(re.match(r"^(precision|recall|f1|iou)_\d+$", base))
 
     scalar_bases = sorted([b for b, splits in bases.items() if splits == {"train", "val"} and not is_classwise_base(b)])
@@ -227,8 +307,11 @@ def main() -> int:
         outpath = os.path.join(args.outdir, f"{base}.png")
         plot_train_val_scalar(df, epoch_col, base, outpath)
 
-    # --- 3) Class-wise metrics: precision/recall/f1/iou all classes in one fig each
-    classwise: Dict[str, Dict[int, Dict[str, str]]] = {}  # metric -> class_id -> split -> colname
+        outpath_diff = os.path.join(args.outdir, f"{base}_diff.png")
+        plot_diff_scalar(df, epoch_col, base, outpath_diff)
+
+    # --- Class-wise metrics
+    classwise: Dict[str, Dict[int, Dict[str, str]]] = {}
     for col in df.columns:
         m = CLASS_METRIC_RE.match(col)
         if not m:
@@ -238,18 +321,19 @@ def main() -> int:
         classwise.setdefault(metric, {}).setdefault(cid, {})[split] = col
 
     for metric_name, per_class in classwise.items():
-        # Keep classes that have both train and val
         class_ids = sorted([cid for cid, splits in per_class.items() if "train" in splits and "val" in splits])
         if not class_ids:
             continue
+
         outpath = os.path.join(args.outdir, f"{metric_name}_all_classes.png")
         plot_all_classes_train_val(df, epoch_col, metric_name, class_ids, outpath)
 
+        outpath_diff = os.path.join(args.outdir, f"{metric_name}_diff_all_classes.png")
+        plot_diff_classwise(df, epoch_col, metric_name, class_ids, outpath_diff)
+
     if args.show:
-        # Re-open saved figures quickly (optional): simplest is to just notify;
-        # interactive re-open is environment-specific, so we do not auto-open files here.
         print(f"[INFO] Saved plots to: {args.outdir}")
-        print("[INFO] Use an image viewer, or re-run and customize to plt.show() per plot if needed.")
+        print("[INFO] Open them with an image viewer.")
 
     return 0
 

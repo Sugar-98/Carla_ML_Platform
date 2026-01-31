@@ -52,7 +52,6 @@ def main():
   DataLoader_config = DataLoader_conf(DataAgent_config)
 
   config = config_LSS()
-  config.ignore_class = []
   config.initialize(root_dir=[data_path],
             carla_garage_config = carla_garage_config,
             DataAgent_config = DataAgent_config, 

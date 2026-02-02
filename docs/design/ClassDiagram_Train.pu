@@ -1,0 +1,57 @@
+@startuml
+hide empty members
+top to bottom direction
+
+
+class Engine{
+    +train():void
+    +validate():void
+    +save():void
+}
+note left of Engine : Control train/validate and save \n model/logs for each epochs
+
+abstract class torch.DataLoader{}
+
+abstract class torch.Dataset{}
+
+class CARLA_Data{}
+
+class Process_Images{
+    +process_data():data
+}
+
+class Process_Bev{
+    +process_data():data
+}
+
+abstract class Model_wrapper{
+    +load_data_compute_loss():loss
+    +init_metrics():void
+    +cal_metrics_batch():void
+    +cal_metrics_epoch():metrics
+    +plot_model_out():void
+}
+note top of Model_wrapper : Abstract model specific calculation \n such as loss, metrics, and plot \n function by using same I/F. 
+
+class LSS_wrapper{}
+class LiftSplatShoot{}
+
+abstract class torch.Module{}
+
+Engine *-- DataLoader
+Engine *-- Model_wrapper
+DataLoader *-- Dataset
+
+Dataset <|-- CARLA_Data
+
+CARLA_Data *-- Process_Images
+CARLA_Data *-- Process_Bev
+
+Model_wrapper *-- Module
+Module <|-- LiftSplatShoot
+Model_wrapper <|-- LSS_wrapper
+LSS_wrapper *-- LiftSplatShoot
+
+
+
+@enduml

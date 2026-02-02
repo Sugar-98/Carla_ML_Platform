@@ -1,0 +1,42 @@
+@startuml
+hide empty members
+top to bottom direction
+
+
+abstract class AutonomousAgent{
+    +setup():void
+    +sensors():list of attached sensors
+    +run_step():Control command
+}
+
+class AutoPilot{
+    -_get_control():Control command
+}
+note left of AutoPilot : ・制御用センサデータの取得\n・経路計画\n・自車の制御
+
+
+class DataAgent{
+    -get_bounding_boxes():Boundingbox
+    -save_sensors():void
+}
+note left of DataAgent : ・データ生成用のセンサデータの取得\n・データセット用Bounding Box, BEVの作成\n・データの書き込み
+
+
+class GlobalConfig{}
+
+class Controller{}
+class Planner{}
+
+class bev_manager{}
+
+AutonomousAgent <|-- AutoPilot
+
+AutoPilot <|-down- DataAgent
+
+AutoPilot *-right- GlobalConfig
+AutoPilot *-right- Controller
+AutoPilot *-right- Planner
+
+DataAgent *-right- bev_manager
+
+@enduml

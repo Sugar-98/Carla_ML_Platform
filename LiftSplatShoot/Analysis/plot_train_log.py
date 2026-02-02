@@ -61,11 +61,18 @@ def plot_train_val_scalar(
     y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
     y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
 
+    # Filter out NaN values
+    valid_indices = ~np.isnan(y_train) & ~np.isnan(y_val)
+    x = x[valid_indices]
+    y_train = y_train[valid_indices]
+    y_val = y_val[valid_indices]
+
     fig = plt.figure(figsize=(9.5, 5.5))
     ax = fig.add_subplot(111)
 
-    ax.plot(x, y_train, label="Train")
-    ax.plot(x, y_val, label="Val")
+    if len(x) > 0:  # Only plot if there is valid data
+        ax.plot(x, y_train, label="Train")
+        ax.plot(x, y_val, label="Val")
 
     ax.set_xlabel("epoch")
     ax.set_ylabel(metric_base)
@@ -97,12 +104,19 @@ def plot_diff_scalar(
 
     y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
     y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
+
+    # Filter out NaN values
+    valid_indices = ~np.isnan(y_train) & ~np.isnan(y_val)
+    x = x[valid_indices]
+    y_train = y_train[valid_indices]
+    y_val = y_val[valid_indices]
     diff = y_train - y_val
 
     fig = plt.figure(figsize=(9.5, 5.5))
     ax = fig.add_subplot(111)
 
-    ax.plot(x, diff, label="Train - Val", color="purple")
+    if len(x) > 0:  # Only plot if there is valid data
+        ax.plot(x, diff, label="Train - Val", color="purple")
 
     ax.set_xlabel("epoch")
     ax.set_ylabel(f"{metric_base} diff")
@@ -176,8 +190,15 @@ def plot_all_classes_train_val(
         y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
         y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
 
-        ax.plot(x, y_train, linestyle="-", color=colors[idx], label=f"C{c} Train")
-        ax.plot(x, y_val, linestyle="--", color=colors[idx], label=f"C{c} Val")
+        # Filter out NaN values
+        valid_indices = ~np.isnan(y_train) & ~np.isnan(y_val)
+        x_valid = x[valid_indices]
+        y_train = y_train[valid_indices]
+        y_val = y_val[valid_indices]
+
+        if len(x_valid) > 0:  # Only plot if there is valid data
+            ax.plot(x_valid, y_train, linestyle="-", color=colors[idx], label=f"C{c} Train")
+            ax.plot(x_valid, y_val, linestyle="--", color=colors[idx], label=f"C{c} Val")
 
     ax.set_xlabel("epoch")
     ax.set_ylabel(metric_name)
@@ -226,9 +247,16 @@ def plot_diff_classwise(
 
         y_train = pd.to_numeric(df[col_train], errors="coerce").to_numpy()
         y_val = pd.to_numeric(df[col_val], errors="coerce").to_numpy()
+
+        # Filter out NaN values
+        valid_indices = ~np.isnan(y_train) & ~np.isnan(y_val)
+        x_valid = x[valid_indices]
+        y_train = y_train[valid_indices]
+        y_val = y_val[valid_indices]
         diff = y_train - y_val
 
-        ax.plot(x, diff, color=colors[idx], label=f"C{c} diff")
+        if len(x_valid) > 0:  # Only plot if there is valid data
+            ax.plot(x_valid, diff, color=colors[idx], label=f"C{c} diff")
 
     ax.set_xlabel("epoch")
     ax.set_ylabel(f"{metric_name} diff")

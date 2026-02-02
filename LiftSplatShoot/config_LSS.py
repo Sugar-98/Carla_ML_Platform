@@ -1,10 +1,10 @@
-from common.config import GlobalConfig
+from common.config.Train_conf import Train_conf
 from common.utils import cal_mfb_weights
 import numpy as np
 from pathlib import Path
 from datetime import datetime
 
-class config_LSS(GlobalConfig):
+class config_LSS(Train_conf):
   def __init__(self):
     super().__init__()
 
@@ -24,9 +24,11 @@ class config_LSS(GlobalConfig):
     self.outC = 11
     
     #Training parameters------------------------------------------
-    self.use_post_augment = True #Post augmentation for RGB
-    self.use_bev_post_augment = True #Post augmentation for BEV
-    self.epochs = 3
+    self.epochs = 20  # Number of epochs to train
+    self.batch_size = 6  # Batch size used during training
+    self.lr = 1e-4  # Learning rate used for training
+    self.weight_decay = 1e-7  # Weight decay coefficient used during training
+    self.early_stopping_th = 20
     
     self.ignore_class = [2, 5, 6, 7, 8, 10]
     hist = np.array([1.0510e+08, 1.5803e+07, 9.9302e+06, 8.3205e+06, 2.4915e+06,
@@ -34,6 +36,11 @@ class config_LSS(GlobalConfig):
 
     self.bev_semantic_weights = cal_mfb_weights(hist, ignore_class=self.ignore_class)
 
-    #Disable other models
-    self.use_PilotNet = False
-    self.use_CIL = False
+  def initialize(self, root_dir='', setting='all', **kwargs):
+    super().initialize(root_dir=root_dir, setting=setting, **kwargs)
+    self.DataLoader_config.ignore_class = self.ignore_class
+    self.DataLoader_config.use_post_augment = True #Post augmentation for RGB
+    self.DataLoader_config.use_bev_post_augment = True #Post augmentation for BEV
+    self.DataLoader_config.num_max_data_train = 80000
+    self.DataLoader_config.num_max_data_val = 5000
+    self.val_towns = [13]

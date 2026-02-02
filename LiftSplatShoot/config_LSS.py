@@ -40,7 +40,7 @@ class config_LSS(Train_conf):
     super().initialize(root_dir=root_dir, setting=setting, **kwargs)
     self.DataLoader_config.ignore_class = self.ignore_class
     self.DataLoader_config.use_post_augment = True #Post augmentation for RGB
-    self.DataLoader_config.use_bev_post_augment = False #Post augmentation for BEV
+    self.DataLoader_config.use_bev_post_augment = True #Post augmentation for BEV
     self.DataLoader_config.num_max_data_train = 80000
     self.DataLoader_config.num_max_data_val = 5000
     self.val_towns = [13]

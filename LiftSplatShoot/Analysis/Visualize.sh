@@ -4,11 +4,11 @@
 source ../../env.sh #Define global path settings
 
 data_path="$PROJECT_ROOT/logs/dataset_plot"
-pretrained_model_dir="$PROJECT_ROOT/pretrained_models/LSS" #Path for pretrained model. 
-state_dict_file='model_best.pth'  #Pretrained model file
-save_path="$PROJECT_ROOT/pretrained_models/LSS"
+pretrained_model_dir="$PROJECT_ROOT/pretrained_models/LSS/2026-01-31_02-22-05" #Path for pretrained model. 
+state_dict_file='model_latest.pth'  #Pretrained model file
+save_path="$PROJECT_ROOT/pretrained_models/LSS/2026-01-31_02-22-05/visualize.mp4"
 
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/train_LSS.py" #Define train script
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/analyze_model.py" #Define train script
 
 (
   cd "$WORK_DIR" || exit

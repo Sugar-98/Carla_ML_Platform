@@ -1,3 +1,4 @@
+import argparse
 import torch
 from torch import optim
 import os
@@ -8,13 +9,26 @@ import sys
 from config import GlobalConfig
 from common.config.DataLoader_conf import DataLoader_conf
 from common.config.DataAgent_conf import DataAgent_conf
+from common.config.DataAnalysis_conf import DataAnalysis_conf
 from pathlib import Path
 from train_lib.dataset_analyzer import Analyzer
 
+
+def parse_args():
+  parser = argparse.ArgumentParser(
+    description="Analyze dataset distribution and statistics."
+  )
+  parser.add_argument("--data", type=str, required=True,
+            help="Path to dataset directory")
+  parser.add_argument("--save_path", type=str, required=True,
+            help="Path to save analysis results")
+  return parser.parse_args()
+
+
 def main():
-  root_dir = Path(__file__).resolve().parent.parent.parent
-  data_path = f"{root_dir}/logs/dataset"
-  save_pth = f"{root_dir}/analysis"
+  args = parse_args()
+  data_path = args.data
+  save_pth = args.save_path
 
   carla_garage_config = GlobalConfig()
   DataAgent_config = DataAgent_conf()
@@ -58,7 +72,8 @@ def main():
     dataloader_val,
     len(train_set),
     len(val_set),
-    carla_garage_config
+    carla_garage_config,
+    analysis_config=DataAnalysis_conf()
   )
 
   analyzer(save_pth)

@@ -23,7 +23,7 @@
                 "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}/carla_garage/carla/PythonAPI/carla:${workspaceFolder}/carla_garage/scenario_runner_autopilot:${workspaceFolder}/carla_garage/leaderboard_autopilot:${workspaceFolder}/carla_garage/team_code:${workspaceFolder}/common_library:${workspaceFolder}"
             },
             "args": [
-                "--data=${workspaceFolder}/logs/dataset",
+                "--data=${workspaceFolder}/logs/dataset_base",
                 "--save_path=${workspaceFolder}/pretrained_models/LSS"
             ]
         },
@@ -45,10 +45,11 @@
                 "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}/carla_garage/carla/PythonAPI/carla:${workspaceFolder}/carla_garage/scenario_runner_autopilot:${workspaceFolder}/carla_garage/leaderboard_autopilot:${workspaceFolder}/carla_garage/team_code:${workspaceFolder}/common_library:${workspaceFolder}/LiftSplatShoot:${workspaceFolder}"
             },
             "args": [
-                "--data=${workspaceFolder}/logs/dataset_plot",
-                "--pretrained_model_path=${workspaceFolder}/pretrained_models/LSS/2026-01-25_15-18-48", 
-                "--state_dict_file=model_0018.pth",
-                "--save_path=${workspaceFolder}/pretrained_models/LSS/2026-01-25_15-18-48/visualize.mp4"
+                "--data=${workspaceFolder}/logs/dataset_bev_failure",
+                "--pretrained_model_path=${workspaceFolder}/pretrained_models/LSS/2026-01-25_15-18-48_OnlyDist_MaskOn", 
+                "--state_dict_file=model_best.pth",
+                "--save_path=${workspaceFolder}/pretrained_models/LSS/2026-01-25_15-18-48_OnlyDist_MaskOn",
+                "--save_mode=1"
             ]
         },
         {
@@ -67,7 +68,11 @@
                 "CARLA_PYTHONAPI_ROOT": "${workspaceFolder}/carla_garage/carla/PythonAPI/carla",
                 "TEAM_CODE_ROOT": "${workspaceFolder}/carla_garage/team_code",
                 "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}/carla_garage/carla/PythonAPI/carla:${workspaceFolder}/carla_garage/scenario_runner_autopilot:${workspaceFolder}/carla_garage/leaderboard_autopilot:${workspaceFolder}/carla_garage/team_code:${workspaceFolder}/common_library:${workspaceFolder}"
-            }
+            },
+            "args": [
+                "--data=${workspaceFolder}/logs/dataset_base",
+                "--save_path=${workspaceFolder}/Data_analysis/Base"
+            ]
         }
     ]
 }

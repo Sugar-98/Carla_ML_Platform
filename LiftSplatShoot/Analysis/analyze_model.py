@@ -15,8 +15,15 @@ from config import GlobalConfig
 from common.config.DataLoader_conf import DataLoader_conf
 from common.config.DataAgent_conf import DataAgent_conf
 from common.utils import MP4Writer
+import cv2
 import time
 import json
+
+
+class SaveMode:
+  VIDEO_ONLY = 0
+  IMAGES_ONLY = 1
+  BOTH = 2
 
 def parse_args():
   parser = argparse.ArgumentParser(
@@ -33,7 +40,11 @@ def parse_args():
             help="File name of pretrained model")
 
   parser.add_argument("--save_path", type=str, default=None,
-            help="Path to save video")
+            help="Base directory for saving outputs")
+
+  parser.add_argument("--save_mode", type=int, default=SaveMode.VIDEO_ONLY,
+            choices=[SaveMode.VIDEO_ONLY, SaveMode.IMAGES_ONLY, SaveMode.BOTH],
+            help="0: video only, 1: images only, 2: both")
   
   return parser.parse_args()
 
@@ -45,7 +56,13 @@ def main():
   data_path = args.data
   pretrained_model_dir = args.pretrained_model_path
   state_dict_file = args.state_dict_file
-  video_save_dir = args.save_path
+  save_path = args.save_path
+  save_mode = args.save_mode
+
+  visualize_dir = None
+  if save_path is not None:
+    visualize_dir = os.path.join(save_path, "visualize")
+    os.makedirs(visualize_dir, exist_ok=True)
 
   carla_garage_config = GlobalConfig()
   DataAgent_config = DataAgent_conf()
@@ -80,19 +97,25 @@ def main():
   
   torch.backends.cudnn.benchmark = True
 
-  if video_save_dir is not None:
+  save_video = visualize_dir is not None and save_mode in (SaveMode.VIDEO_ONLY, SaveMode.BOTH)
+  save_images = visualize_dir is not None and save_mode in (SaveMode.IMAGES_ONLY, SaveMode.BOTH)
+
+  if save_video:
     video = MP4Writer(
-        save_path=video_save_dir,
+        save_path=os.path.join(visualize_dir, "output.mp4"),
         fps=10
     )
   
-  for data in dataloader_val:
+  for frame_idx, data in enumerate(dataloader_val):
     model_wrapper.load_data_compute_loss(data)
     img = model_wrapper.plot_model_out()
-    if video_save_dir is not None:
+    if save_video:
       video.write(img)
+    if save_images:
+      img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+      cv2.imwrite(os.path.join(visualize_dir, f"frame_{frame_idx:05d}.png"), img_bgr)
 
-  if video_save_dir is not None:
+  if save_video:
     video.close()
 
   print("Press any key to continue...")
